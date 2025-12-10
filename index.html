@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>選號系統</title>
+    <style>
+        /* ================================================= */
+        /* 基礎/通用 樣式 - 高對比度設計 */
+        /* ================================================= */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0; 
+            color: #ffffff; 
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .main-layout {
+            display: flex;
+            width: 100%;
+            max-width: 1200px;
+            gap: 20px;
+            padding: 20px;
+            position: relative;
+        }
+
+        /* ================================================= */
+        /* 左側導航欄 (Sidebar) - 極簡 */
+        /* ================================================= */
+        .sidebar {
+            width: 150px;
+            position: fixed; 
+            left: 20px;
+            top: 20px;
+            background-color: #333; 
+            border-radius: 15px;
+            padding: 15px 0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            z-index: 10;
+            color: #fff;
+        }
+
+        .nav-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .nav-list a {
+            display: block;
+            padding: 15px;
+            color: #fff;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.1em;
+            transition: background-color 0.2s, color 0.2s;
+            border-bottom: 1px solid #444;
+        }
+
+        .nav-list a:hover {
+            background-color: #555;
+            color: #ffc400;
+        }
+        
+        .nav-list .active a {
+            background-color: #ffc400;
+            color: #333;
+            border-radius: 0 10px 10px 0;
+            border-bottom: none;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
+        }
+        
+        /* 內容容器 - 深色透明背景，確保文字清晰 */
+        .content-container {
+            flex-grow: 1;
+            padding: 25px;
+            border-radius: 15px;
+            background: rgba(0, 0, 0, 0.7); 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            margin-left: 170px; 
+            min-height: calc(100vh - 40px);
+        }
+
+        /* 主標題 */
+        h1 {
+            text-align: center;
+            font-size: 2.2em;
+            margin-bottom: 25px;
+            color: #ffc400; 
+        }
+        
+        /* 橫幅標題 */
+        h2 {
+            text-align: center;
+            background: linear-gradient(90deg, #ffc400, #ffeb3b, #ffc400);
+            color: #333;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 1.8em;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            font-weight: bold;
+        }
+
+        /* 選號條件區塊 (Section) */
+        .setting-section {
+            padding: 20px 0;
+            margin-bottom: 20px;
+        }
+
+        .input-line {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .setting-label {
+            font-size: 1.2em;
+            font-weight: bold;
+            flex-basis: 120px; 
+            color: #fff;
+            padding-top: 10px; 
+        }
+        
+        /* 圓形數字輸入 */
+        .input-circle {
+            position: relative;
+            width: 60px; 
+            height: 60px;
+            background: #fff;
+            color: #0984e3;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.8em;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.7);
+            transition: transform 0.2s;
+        }
+        .input-circle:hover { transform: scale(1.05); }
+        .input-circle::after {
+            content: '▼';
+            position: absolute;
+            bottom: -20px;
+            color: #00b894;
+            font-size: 1em;
+        }
+        
+        /* 選號範圍橫向排列修正 */
+        .input-range-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .input-range-group span {
+            font-size: 1.2em;
+            font-weight: bold;
+            padding-top: 10px; 
+        }
+
+        /* 缺席設定按鈕 */
+        .absent-button {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            background: #81ecec;
+            color: #0077c2;
+            font-weight: bold;
+            font-size: 1.1em;
+            box-shadow: 0 4px #00a8a8;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .absent-button:active {
+            box-shadow: 0 1px #00a8a8;
+            transform: translateY(3px);
+        }
+
+        /* 單雙號選項對齊修正 */
+        .parity-group { 
+            display: flex; 
+            gap: 30px; 
+            align-items: center; 
+            padding-top: 10px; 
+        }
+        .parity-option { 
+            font-size: 1.2em; 
+            display: flex;
+            align-items: center;
+            height: 40px; 
+        }
+        .parity-option input[type="radio"] { display: none; }
+        .parity-option label {
+            position: relative;
+            padding: 0 0 0 35px;
+            cursor: pointer;
+            font-weight: bold;
+            line-height: 25px; 
+            display: inline-block;
+        }
+        .parity-option label::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%); 
+            width: 25px;
+            height: 25px;
+            border: 3px solid #fff;
+            border-radius: 5px;
+            background-color: transparent;
+            transition: all 0.2s;
+        }
+        .parity-option input:checked + label::before {
+            background-color: #ff69b4;
+            border-color: #ff1493;
+            box-shadow: 0 0 5px rgba(255, 105, 180, 0.8);
+        }
+        .parity-option input:checked + label::after {
+            content: '✓';
+            position: absolute;
+            left: 4px;
+            top: 50%;
+            transform: translateY(-50%) scale(1.2); 
+            color: #fff;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        
+        /* GO 按鈕位置和寬度 */
+        .go-button {
+            position: static; 
+            width: 100%; 
+            height: 70px;
+            margin-top: 20px;
+            margin-bottom: 20px; 
+            background-color: #ff69b4;
+            color: white;
+            font-size: 2em;
+            border: none;
+            border-radius: 35px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 8px #ff1493;
+            transition: all 0.2s;
+            z-index: 5;
+        }
+        .go-button:active { box-shadow: 0 2px #ff1493; transform: translateY(6px); }
+
+        /* 結果顯示 */
+        .result-box {
+            background-color: #333; 
+            padding: 15px;
+            border-radius: 10px;
+            min-height: 50px;
+            color: white;
+            border: 1px solid #ffc400;
+        }
+        .result-numbers { 
+            font-size: 2.2em; 
+            font-weight: bold; 
+            color: #00ffff; 
+            display: block; 
+            padding: 10px 0; 
+        }
+        .result-group-line {
+            margin-bottom: 8px;
+            padding: 8px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-left: 5px solid #00ffff;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .result-group-line strong {
+            color: #ffc400;
+        }
+        
+        /* 動畫樣式 */
+        @keyframes spinning { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        .spinning { display: inline-block; animation: spinning 0.1s infinite alternate; }
+        .group-spinning-line { font-size: 1.1em; color: #00ffff; animation: spinning 0.2s infinite alternate; }
+
+
+        /* ================================================= */
+        /* 數字鍵盤 Modal 樣式 */
+        /* ================================================= */
+        .modal { 
+            display: none; 
+            position: fixed; 
+            z-index: 100; 
+            left: 0; 
+            top: 0; 
+            width: 100%; 
+            height: 100%; 
+            background-color: rgba(0,0,0,0.7); 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+        }
+        .modal-content { 
+            background: linear-gradient(135deg, #a8c0ff, #3f2b96); 
+            padding: 20px; 
+            border-radius: 15px; 
+            width: 90%; 
+            max-width: 400px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.8);
+            transform: scale(0.95);
+            transition: transform 0.3s ease-out;
+            border: 5px solid #fff;
+        }
+        .modal.active .modal-content {
+            transform: scale(1);
+        }
+        .close-button { color: white; float: right; font-size: 35px; font-weight: bold; cursor: pointer; }
+        
+        .keypad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 15px; }
+        .keypad-button { 
+            background: white; 
+            color: #0984e3; 
+            font-size: 2em; 
+            padding: 10px 0; 
+            border: 5px solid #0984e3; 
+            border-radius: 50%; 
+            cursor: pointer; 
+            font-weight: bold; 
+            box-shadow: 0 4px #0077c2;
+            transition: all 0.1s;
+        }
+        .keypad-button:active {
+            box-shadow: 0 1px #0077c2;
+            transform: translateY(3px);
+        }
+
+        .keypad-button.action-button { 
+            border-radius: 30px; 
+            font-size: 1.2em; 
+            padding: 15px; 
+            border: none;
+            color: white;
+            font-weight: bold;
+        }
+        .keypad-button.action-button.clear {
+            background-color: #00b894; 
+            box-shadow: 0 4px #00967a;
+        }
+        .keypad-button.action-button.confirm {
+            background-color: #0077c2;
+            box-shadow: 0 4px #005a9c;
+        }
+
+        /* 缺席號碼彈窗 */
+        .absent-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+            padding: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+        .absent-number {
+            background: #fff;
+            color: #333;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+        }
+        .absent-number.is-absent {
+            background: #ff69b4;
+            color: white;
+            box-shadow: 0 0 8px rgba(255, 105, 180, 0.8);
+        }
+        
+        /* 響應式佈局 (Mobile) */
+        @media (max-width: 767px) {
+            body { padding: 10px; }
+            .main-layout { flex-direction: column; gap: 15px; padding: 10px; }
+            .sidebar { display: none; }
+            .content-container { padding: 15px; margin-left: 0; }
+            .input-line { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .setting-label { flex-basis: auto; width: 100%; }
+            .input-range-group { display: flex; gap: 10px; align-items: center; width: 100%; }
+            .input-range-group .input-circle { flex-grow: 1; }
+            .parity-group { display: flex; justify-content: space-around; width: 100%; }
+            .absent-button { margin-top: 10px; width: 100%; }
+            .go-button { 
+                position: static; 
+                width: 100%; 
+                margin-top: 20px;
+                box-shadow: 0 4px #ff1493;
+            }
+            #modeSelector {
+                display: block !important;
+                padding: 20px;
+                border-radius: 15px;
+                background: rgba(0, 0, 0, 0.4);
+                margin-bottom: 20px;
+            }
+            .mode-select-button {
+                width: 100%;
+                padding: 15px;
+                margin-bottom: 15px;
+                font-size: 1.2em;
+                background-color: #ff69b4;
+                color: white;
+                border: none;
+                border-radius: 10px;
+                cursor: pointer;
+            }
+        }
+        #modeSelector { display: none; } 
+    </style>
+</head>
+<body>
+
+    <div class="main-layout">
+        
+        <div class="sidebar">
+            <ul class="nav-list">
+                <li id="btnSelectionSidebar" class="active"><a href="#" onclick="switchFunction('selection')">🎯 選號系統</a></li>
+                <li id="btnGroupingSidebar"><a href="#" onclick="switchFunction('grouping')">👥 分組功能</a></li>
+            </ul>
+        </div>
+
+
+        <div class="content-container">
+            <h1>選號系統</h1>
+
+            <div id="modeSelector">
+                <h2>功能選擇</h2>
+                <button class="mode-select-button" onclick="selectModeAndSwitch('selection')">🎯 選號系統</button>
+                <button class="mode-select-button" onclick="selectModeAndSwitch('grouping')">👥 分組功能</button>
+            </div>
+            
+            <div id="selectionArea" style="display:none;">
+                <h2>選號條件</h2>
+
+                <div class="setting-section">
+                    
+                    <div class="input-line">
+                        <label class="setting-label">選號範圍</label>
+                        <div class="input-range-group">
+                            <div class="input-circle" id="startNumberDisplay" onclick="openKeypad('startNumber', 99)">1</div>
+                            <span>至</span>
+                            <div class="input-circle" id="endNumberDisplay" onclick="openKeypad('endNumber', 99)">26</div>
+                        </div>
+                        <button class="absent-button" onclick="openAbsentModal()">
+                            <span style="font-size: 1.5em;">👤</span> 缺席設定
+                        </button>
+                    </div>
+                    
+                    <div class="input-line">
+                        <label class="setting-label">選號人數</label>
+                        <div class="input-circle" id="selectionCountDisplay" onclick="openKeypad('selectionCount', 26)">1</div>
+                        
+                        <div class="parity-group">
+                            <div class="parity-option">
+                                <input type="radio" name="parity" value="all" id="parityAll" checked> 
+                                <label for="parityAll">全部</label>
+                            </div>
+                            <div class="parity-option">
+                                <input type="radio" name="parity" value="odd" id="parityOdd"> 
+                                <label for="parityOdd">單號</label>
+                            </div>
+                            <div class="parity-option">
+                                <input type="radio" name="parity" value="even" id="parityEven"> 
+                                <label for="parityEven">雙號</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="go-button" onclick="animateAndRunSelection()">GO</button>
+                
+                <div class="result-box" id="selectionResult">
+                    <p>選號結果將顯示於此</p>
+                    <div class="result-numbers" id="finalNumbers"></div>
+                </div>
+            </div>
+
+            <div id="groupingArea" style="display:none;">
+                <h2>分組條件</h2>
+                
+                <div class="setting-section">
+                    <p>分組範圍將同步於選號範圍 (<span id="groupRangeDisplay">1 到 26</span>)。</p>
+                    <div class="input-line">
+                        <label class="setting-label">分組數量</label>
+                        <div class="input-circle" id="groupCountDisplay" onclick="openKeypad('groupCount', 26)">1</div>
+                    </div>
+                </div>
+                
+                <button class="go-button" onclick="animateAndRunGrouping()">GO</button>
+
+                <div class="result-box" id="groupingResult">分組結果將顯示於此</div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div id="keypadModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeKeypad()">&times;</span>
+            <h3 id="keypadTitle" style="text-align: center;">輸入數字</h3>
+            <div class="input-circle" id="keypadInputDisplay" style="margin: 20px auto; width: 70px; height: 70px;"></div>
+
+            <div class="keypad-grid">
+                <button class="keypad-button" onclick="inputDigit(1)">1</button>
+                <button class="keypad-button" onclick="inputDigit(2)">2</button>
+                <button class="keypad-button" onclick="inputDigit(3)">3</button>
+                <button class="keypad-button" onclick="inputDigit(4)">4</button>
+                <button class="keypad-button" onclick="inputDigit(5)">5</button>
+                <button class="keypad-button" onclick="inputDigit(6)">6</button>
+                <button class="keypad-button" onclick="inputDigit(7)">7</button>
+                <button class="keypad-button" onclick="inputDigit(8)">8</button>
+                <button class="keypad-button" onclick="inputDigit(9)">9</button>
+                
+                <button class="keypad-button action-button clear" onclick="clearInput()">清除</button>
+                <button class="keypad-button" onclick="inputDigit(0)">0</button>
+                <button class="keypad-button action-button confirm" onclick="confirmKeypadInput()">確定</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="absentModal" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width: 500px;">
+            <span class="close-button" onclick="closeAbsentModal()">&times;</span>
+            <h3 style="text-align: center;">缺席設定 (點擊號碼切換狀態)</h3>
+            <p>當前範圍：<span id="currentStartNumber"></span> 到 <span id="currentEndNumber"></span></p>
+            <div id="absentGrid" class="absent-grid">
+            </div>
+            <p style="margin-top: 10px; color: #ffcccb;">已排除號碼: <span id="absentListDisplay"></span></p>
+            <button class="absent-button" onclick="closeAbsentModal()" style="width: 100%;">關閉</button>
+        </div>
+    </div>
+
+    <script>
+        let currentTargetId = ''; 
+        let currentInputValue = ''; 
+        let maxLimit = 99; 
+        let absentNumbers = []; 
+        let isAnimating = false;
+        let isMobile = window.matchMedia("(max-width: 767px)").matches;
+        // 修正 3：新增旗標，用於控制是否覆寫輸入
+        let shouldOverwrite = false; 
+
+        // ====================================
+        // 0. 響應式與功能切換邏輯
+        // ====================================
+
+        function switchFunction(mode) {
+            if (isAnimating) return;
+            const selectionArea = document.getElementById('selectionArea');
+            const groupingArea = document.getElementById('groupingArea');
+            
+            if (!isMobile) {
+                document.querySelectorAll('.nav-list li').forEach(li => li.classList.remove('active'));
+                if (mode === 'selection') {
+                    document.getElementById('btnSelectionSidebar').classList.add('active');
+                } else if (mode === 'grouping') {
+                    document.getElementById('btnGroupingSidebar').classList.add('active');
+                }
+            }
+
+            if (mode === 'selection') {
+                selectionArea.style.display = 'block';
+                groupingArea.style.display = 'none';
+            } else if (mode === 'grouping') {
+                selectionArea.style.display = 'none';
+                groupingArea.style.display = 'block';
+            }
+            updateGroupRangeDisplay();
+        }
+
+        function selectModeAndSwitch(mode) {
+            document.getElementById('modeSelector').style.display = 'none';
+            switchFunction(mode);
+        }
+
+        function updateGroupRangeDisplay() {
+            const startNum = parseInt(document.getElementById('startNumberDisplay').textContent);
+            const endNum = parseInt(document.getElementById('endNumberDisplay').textContent);
+            document.getElementById('groupRangeDisplay').textContent = `${startNum} 到 ${endNum}`;
+        }
+        
+        // ====================================
+        // 1. 數字鍵盤處理邏輯
+        // ====================================
+
+        function openKeypad(targetId, maxVal) {
+            if (isAnimating) return; 
+            currentTargetId = targetId;
+            maxLimit = maxVal;
+            const displayElement = document.getElementById(targetId + 'Display');
+            const modal = document.getElementById('keypadModal');
+            
+            currentInputValue = displayElement.textContent;
+            document.getElementById('keypadInputDisplay').textContent = currentInputValue;
+            
+            let title = '';
+            if (targetId === 'startNumber') title = '輸入起始號碼 (1-99)';
+            else if (targetId === 'endNumber') title = '輸入結束號碼 (1-99)';
+            else if (targetId === 'selectionCount') title = '輸入選取人數';
+            else if (targetId === 'groupCount') title = '輸入分組數量';
+            document.getElementById('keypadTitle').textContent = title;
+            
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('active'), 10);
+            
+            // 修正 3：開啟鍵盤時，設置為下次輸入自動覆寫
+            shouldOverwrite = true; 
+        }
+
+        function closeKeypad() {
+            const modal = document.getElementById('keypadModal');
+            modal.classList.remove('active');
+            setTimeout(() => modal.style.display = 'none', 300);
+        }
+
+        function inputDigit(digit) {
+            let newValue;
+            
+            // 修正 3：檢查是否需要覆寫
+            if (shouldOverwrite) {
+                newValue = String(digit);
+                shouldOverwrite = false; // 覆寫後，將旗標設回 false
+            } else {
+                newValue = currentInputValue + digit;
+            }
+
+            // 1. 限制長度
+            if (newValue.length > 2) {
+                return;
+            }
+
+            // 2. 處理導向零 (e.g. '05' -> '5')
+            if (newValue.length > 1 && newValue.startsWith('0')) {
+                newValue = String(parseInt(newValue));
+            }
+
+            // 3. 限制最大值
+            if (parseInt(newValue) > maxLimit) {
+                return;
+            }
+
+            currentInputValue = newValue;
+            document.getElementById('keypadInputDisplay').textContent = currentInputValue;
+        }
+
+        function clearInput() {
+            currentInputValue = '';
+            document.getElementById('keypadInputDisplay').textContent = '';
+            // 修正 3：清除後，允許下一次輸入時繼續串接
+            shouldOverwrite = false; 
+        }
+
+        function confirmKeypadInput() {
+            const finalValue = parseInt(currentInputValue || '1');
+            const displayElement = document.getElementById(currentTargetId + 'Display');
+            
+            if (finalValue < 1) { 
+                currentInputValue = '1';
+                document.getElementById('keypadInputDisplay').textContent = '1';
+                return;
+            }
+
+            displayElement.textContent = finalValue;
+            
+            let startNum = parseInt(document.getElementById('startNumberDisplay').textContent);
+            let endNum = parseInt(document.getElementById('endNumberDisplay').textContent);
+
+            // 確保範圍邏輯正確：起始號碼不能大於結束號碼
+            if (startNum > endNum) {
+                if (currentTargetId === 'startNumber') {
+                    document.getElementById('endNumberDisplay').textContent = finalValue;
+                    endNum = finalValue;
+                } else if (currentTargetId === 'endNumber') {
+                    document.getElementById('startNumberDisplay').textContent = finalValue;
+                    startNum = finalValue;
+                }
+            }
+
+            const rangeSize = endNum - startNum + 1;
+            if (currentTargetId !== 'groupCount' && currentTargetId !== 'selectionCount') {
+                // 更新選號人數和分組數量，使其不超過範圍
+                const selectionCount = parseInt(document.getElementById('selectionCountDisplay').textContent);
+                document.getElementById('selectionCountDisplay').textContent = Math.min(selectionCount, rangeSize);
+                
+                const groupCount = parseInt(document.getElementById('groupCountDisplay').textContent);
+                document.getElementById('groupCountDisplay').textContent = Math.min(groupCount, rangeSize);
+            }
+            
+            updateGroupRangeDisplay();
+            closeKeypad();
+        }
+        
+        // ====================================
+        // 2. 缺席設定處理邏輯
+        // ====================================
+
+        function openAbsentModal() {
+            if (isAnimating) return; 
+            const start = parseInt(document.getElementById('startNumberDisplay').textContent);
+            const end = parseInt(document.getElementById('endNumberDisplay').textContent);
+            document.getElementById('currentStartNumber').textContent = start;
+            document.getElementById('currentEndNumber').textContent = end;
+            const grid = document.getElementById('absentGrid');
+            grid.innerHTML = ''; 
+            absentNumbers = absentNumbers.filter(n => n >= start && n <= end);
+            updateAbsentListDisplay();
+
+            for (let i = start; i <= end; i++) {
+                const btn = document.createElement('div');
+                btn.className = 'absent-number';
+                btn.textContent = i;
+                btn.dataset.number = i;
+                btn.onclick = toggleAbsentNumber;
+                if (absentNumbers.includes(i)) {
+                    btn.classList.add('is-absent');
+                }
+                grid.appendChild(btn);
+            }
+
+            const modal = document.getElementById('absentModal');
+            modal.style.display = 'flex'; 
+            setTimeout(() => modal.classList.add('active'), 10);
+        }
+
+        function closeAbsentModal() {
+            const modal = document.getElementById('absentModal');
+            modal.classList.remove('active');
+            setTimeout(() => modal.style.display = 'none', 300);
+        }
+
+        function toggleAbsentNumber(event) {
+            const num = parseInt(event.target.dataset.number);
+            const index = absentNumbers.indexOf(num);
+            if (index > -1) {
+                absentNumbers.splice(index, 1);
+                event.target.classList.remove('is-absent');
+            } else {
+                absentNumbers.push(num);
+                event.target.classList.add('is-absent');
+            }
+            absentNumbers.sort((a, b) => a - b);
+            updateAbsentListDisplay();
+        }
+
+        function updateAbsentListDisplay() {
+            document.getElementById('absentListDisplay').textContent = absentNumbers.join(', ') || '無';
+        }
+
+        // ====================================
+        // 3. 核心隨機邏輯與動畫
+        // ====================================
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function runSelectionLogic() {
+            const startNumber = parseInt(document.getElementById('startNumberDisplay').textContent);
+            const endNumber = parseInt(document.getElementById('endNumberDisplay').textContent);
+            const selectionCount = parseInt(document.getElementById('selectionCountDisplay').textContent);
+            
+            const parityOptions = document.querySelectorAll('input[name="parity"]');
+            let parityFilter = 'all';
+            parityOptions.forEach(radio => {
+                if (radio.checked) parityFilter = radio.value;
+            });
+
+            let allCandidates = Array.from({ length: endNumber - startNumber + 1 }, (_, i) => i + startNumber);
+            let candidates = allCandidates.filter(num => !absentNumbers.includes(num));
+            
+            if (parityFilter === 'odd') {
+                candidates = candidates.filter(num => num % 2 !== 0);
+            } else if (parityFilter === 'even') {
+                candidates = candidates.filter(num => num % 2 === 0);
+            }
+
+            if (candidates.length === 0) return [];
+
+            const countToSelect = Math.min(selectionCount, candidates.length);
+
+            const shuffledCandidates = shuffleArray(candidates);
+            return shuffledCandidates.slice(0, countToSelect).sort((a, b) => a - b);
+        }
+
+        function animateAndRunSelection() {
+            if (isAnimating) return; 
+            isAnimating = true;
+
+            const finalNumbersDiv = document.getElementById('finalNumbers');
+            const resultBox = document.getElementById('selectionResult');
+            const selectionCount = parseInt(document.getElementById('selectionCountDisplay').textContent);
+            
+            resultBox.querySelector('p').textContent = "隨機選號中...";
+            finalNumbersDiv.innerHTML = Array(selectionCount).fill('<span class="spinning">?</span>').join(' ');
+            
+            const totalDuration = 2000; 
+            const animationStartTime = Date.now();
+            
+            const interval = setInterval(() => {
+                const elapsed = Date.now() - animationStartTime;
+                if (elapsed < totalDuration) {
+                    const tempNumbers = Array(selectionCount).fill(0).map(() => Math.floor(Math.random() * 99) + 1).join(' ');
+                    finalNumbersDiv.innerHTML = `<span class="spinning">${tempNumbers}</span>`;
+                } else {
+                    clearInterval(interval);
+                    isAnimating = false;
+                    
+                    const selectedNumbers = runSelectionLogic();
+                    
+                    if (selectedNumbers.length === 0) {
+                        resultBox.querySelector('p').textContent = "警告：沒有可選的號碼！";
+                        finalNumbersDiv.innerHTML = '';
+                        return;
+                    }
+                    
+                    resultBox.querySelector('p').textContent = `成功！隨機選號結果 (${selectedNumbers.length} 個):`;
+                    finalNumbersDiv.innerHTML = selectedNumbers.join(', ');
+                    
+                    if (selectedNumbers.length < selectionCount) {
+                        resultBox.querySelector('p').textContent += " (候選號碼不足)";
+                    }
+                }
+            }, 100);
+        }
+
+        function runGroupingLogic() {
+            const startNumber = parseInt(document.getElementById('startNumberDisplay').textContent);
+            const endNumber = parseInt(document.getElementById('endNumberDisplay').textContent);
+            const groupCount = parseInt(document.getElementById('groupCountDisplay').textContent);
+            
+            const allNumbers = Array.from({ length: endNumber - startNumber + 1 }, (_, i) => i + startNumber);
+            const totalParticipants = allNumbers.length;
+            
+            if (groupCount <= 0 || groupCount > totalParticipants) {
+                 return { error: `錯誤：分組數必須在 1 到 ${totalParticipants} 之間。` };
+            }
+
+            const shuffledNumbers = shuffleArray(allNumbers);
+            
+            const baseSize = Math.floor(totalParticipants / groupCount);
+            let remainder = totalParticipants % groupCount;
+
+            let start_index = 0;
+            let resultGroups = {};
+
+            for (let i = 0; i < groupCount; i++) {
+                const groupNum = i + 1;
+                let size = baseSize;
+                if (remainder > 0) {
+                    size += 1;
+                    remainder--;
+                }
+
+                const groupNumbers = shuffledNumbers.slice(start_index, start_index + size).sort((a, b) => a - b);
+                start_index += size;
+                resultGroups[groupNum] = groupNumbers;
+            }
+            
+            return { groups: resultGroups, totalParticipants: totalParticipants, start: startNumber, end: endNumber, count: groupCount };
+        }
+
+        function animateAndRunGrouping() {
+            if (isAnimating) return; 
+            isAnimating = true;
+
+            const resultBox = document.getElementById('groupingResult');
+            const groupCount = parseInt(document.getElementById('groupCountDisplay').textContent);
+            
+            const startNumber = parseInt(document.getElementById('startNumberDisplay').textContent);
+            const endNumber = parseInt(document.getElementById('endNumberDisplay').textContent);
+            const totalParticipants = endNumber - startNumber + 1;
+
+            if (groupCount <= 0 || groupCount > totalParticipants) {
+                isAnimating = false;
+                resultBox.innerHTML = `❌ 錯誤：分組數必須在 1 到 ${totalParticipants} 之間。`;
+                return;
+            }
+
+            resultBox.innerHTML = '<p>分組中...</p>';
+            for (let i = 1; i <= groupCount; i++) {
+                 resultBox.innerHTML += `<div class="group-spinning-line">第 ${i} 組: 正在分配...</div>`;
+            }
+
+            const totalDuration = 2500; 
+            const animationStartTime = Date.now();
+            
+            const interval = setInterval(() => {
+                const elapsed = Date.now() - animationStartTime;
+                if (elapsed >= totalDuration) {
+                    clearInterval(interval);
+                    isAnimating = false;
+                    
+                    const result = runGroupingLogic();
+                    
+                    if (result.error) {
+                        resultBox.innerHTML = `❌ 錯誤：${result.error}`;
+                        return;
+                    }
+                    
+                    let resultHTML = `<p>成功！公平分組結果 (範圍: ${result.start}-${result.end}，組數: ${result.count}):</p>`;
+                    
+                    for (const groupNum in result.groups) {
+                        const groupNumbers = result.groups[groupNum];
+                        resultHTML += `<div class="result-group-line"><strong>第 ${groupNum} 組 (${groupNumbers.length} 人):</strong> ${groupNumbers.join(', ')}</div>`;
+                    }
+
+                    resultBox.innerHTML = resultHTML;
+
+                } else {
+                    const tempHTML = '<p>分組中...</p>';
+                    let randomResult = '';
+                    for (let i = 1; i <= groupCount; i++) {
+                        const randomNums = Array(Math.floor(Math.random() * 5) + 3).fill(0).map(() => Math.floor(Math.random() * 99) + 1).join(', ');
+                        randomResult += `<div class="group-spinning-line">第 ${i} 組: ${randomNums}</div>`;
+                    }
+                    resultBox.innerHTML = tempHTML + randomResult;
+                }
+            }, 150);
+        }
+
+        // 初始設定
+        document.addEventListener('DOMContentLoaded', () => {
+            isMobile = window.matchMedia("(max-width: 767px)").matches;
+            
+            if (isMobile) {
+                document.getElementById('modeSelector').style.display = 'block';
+            } else {
+                switchFunction('selection');
+            }
+            updateGroupRangeDisplay();
+        });
+    </script>
+</body>
+</html>
