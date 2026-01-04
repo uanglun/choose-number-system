@@ -490,7 +490,7 @@
                 <button class="go-button" onclick="animateAndRunSelection()">GO</button>
                 
                 <div class="result-box" id="selectionResult">
-                    <p>選號結果將顯示於此</p>
+                    <p>請先按下GO鍵</p>
                     <div class="result-numbers" id="finalNumbers"></div>
                 </div>
             </div>
@@ -542,7 +542,7 @@
     <div id="absentModal" class="modal" style="display:none;">
         <div class="modal-content" style="max-width: 500px;">
             <span class="close-button" onclick="closeAbsentModal()">&times;</span>
-            <h3 style="text-align: center;">缺席設定 (點擊號碼切換狀態)</h3>
+            <h3 style="text-align: center;">缺席設定</h3>
             <p>當前範圍：<span id="currentStartNumber"></span> 到 <span id="currentEndNumber"></span></p>
             <div id="absentGrid" class="absent-grid">
             </div>
@@ -833,12 +833,12 @@
                     const selectedNumbers = runSelectionLogic();
                     
                     if (selectedNumbers.length === 0) {
-                        resultBox.querySelector('p').textContent = "警告：沒有可選的號碼！";
+                        resultBox.querySelector('p').textContent = "404 ERROR (請確認選號範圍！)";
                         finalNumbersDiv.innerHTML = '';
                         return;
                     }
                     
-                    resultBox.querySelector('p').textContent = `成功！隨機選號結果 (${selectedNumbers.length} 個):`;
+                    resultBox.querySelector('p').textContent = `隨機選號結果： (${selectedNumbers.length} 個):`;
                     finalNumbersDiv.innerHTML = selectedNumbers.join(', ');
                     
                     if (selectedNumbers.length < selectionCount) {
@@ -857,7 +857,7 @@
             const totalParticipants = allNumbers.length;
             
             if (groupCount <= 0 || groupCount > totalParticipants) {
-                 return { error: `錯誤：分組數必須在 1 到 ${totalParticipants} 之間。` };
+                 return { error: `ERROR：分組數必須在 1 到 ${totalParticipants} 之間。` };
             }
 
             const shuffledNumbers = shuffleArray(allNumbers);
@@ -897,7 +897,7 @@
 
             if (groupCount <= 0 || groupCount > totalParticipants) {
                 isAnimating = false;
-                resultBox.innerHTML = `❌ 錯誤：分組數必須在 1 到 ${totalParticipants} 之間。`;
+                resultBox.innerHTML = `❌ ERROR：分組數必須在 1 到 ${totalParticipants} 之間。`;
                 return;
             }
 
@@ -918,11 +918,11 @@
                     const result = runGroupingLogic();
                     
                     if (result.error) {
-                        resultBox.innerHTML = `❌ 錯誤：${result.error}`;
+                        resultBox.innerHTML = `ERROR 錯誤：${result.error}`;
                         return;
                     }
                     
-                    let resultHTML = `<p>成功！公平分組結果 (範圍: ${result.start}-${result.end}，組數: ${result.count}):</p>`;
+                    let resultHTML = `<p>公平分組結果： (範圍: ${result.start}-${result.end}，組數: ${result.count}):</p>`;
                     
                     for (const groupNum in result.groups) {
                         const groupNumbers = result.groups[groupNum];
@@ -956,4 +956,5 @@
         });
     </script>
 </body>
+
 </html>
